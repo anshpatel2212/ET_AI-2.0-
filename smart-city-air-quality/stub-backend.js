@@ -36,11 +36,23 @@ const forecast = Array.from({ length: 48 }, (_, i) => ({
 
 app.get('/api/v1/public/aqi/current', (req, res) => {
   const s = STATIONS[0];
+  const aqi = Math.round(120 + Math.random() * 80);
+  const cat = aqi <= 100 ? 'Moderate' : aqi <= 150 ? 'Unhealthy for Sensitive Groups' : aqi <= 200 ? 'Unhealthy' : 'Severe';
   res.json({
-    aqi: s.aqi, aqiCategory: s.aqiCategory, pm25: 85.3, pm10: 142.1, co: 1.82, no2: 34.2, so2: 12.5, o3: 28.7,
-    temperature: 34.2, humidity: 62.1, windSpeed: 4.2, pressure: 1011, visibility: 8.5,
+    aqi, aqiCategory: cat,
+    pm25: +(50 + Math.random() * 80).toFixed(1),
+    pm10: +(100 + Math.random() * 100).toFixed(1),
+    co: +(0.8 + Math.random() * 1.5).toFixed(2),
+    no2: Math.round(20 + Math.random() * 30),
+    so2: Math.round(5 + Math.random() * 15),
+    o3: Math.round(20 + Math.random() * 30),
+    temperature: +(30 + Math.random() * 8).toFixed(1),
+    humidity: Math.round(50 + Math.random() * 25),
+    windSpeed: +(2 + Math.random() * 5).toFixed(1),
+    pressure: Math.round(1005 + Math.random() * 15),
+    visibility: +(6 + Math.random() * 6).toFixed(1),
     primaryPollutant: 'PM2.5', healthAdvice: 'Limit outdoor activities for sensitive groups.',
-    source: 'CPCB (via WAQI)', lastUpdated: new Date().toISOString(), confidence: 0.88,
+    source: 'CPCB (via WAQI)', lastUpdated: new Date().toISOString(), confidence: +(0.75 + Math.random() * 0.2).toFixed(2),
     station: { stationId: s.stationId, stationName: s.stationName }
   });
 });

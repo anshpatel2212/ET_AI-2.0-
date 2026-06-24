@@ -130,7 +130,9 @@ async function dispatchAlert(alert: any): Promise<void> {
     );
 
     const redis = getRedisClient();
-    await redis.publish('alerts', JSON.stringify(alert));
+    if (redis) {
+      await redis.publish('alerts', JSON.stringify(alert));
+    }
     logger.info({ alertId: alert.alertId }, 'Alert dispatched');
   } catch (error) {
     logger.error({ err: error, alertId: alert.alertId }, 'Alert dispatch failed');

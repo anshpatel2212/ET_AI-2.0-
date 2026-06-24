@@ -1,0 +1,11 @@
+{
+  "name": "et-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix smart-city-air-quality",
+    "dev:frontend": "npm run dev:frontend --prefix smart-city-air-quality",
+    "dev:backend": "npm run dev:backend --prefix smart-city-air-quality",
+    "build": "npm run build --prefix smart-city-air-quality",
+    "start": "npm run start --prefix smart-city-air-quality"
+  }
+}

@@ -109,7 +109,7 @@ export async function createSubscription(req: Request, res: Response, next: Next
 
     const redis = getRedisClient();
     const key = `subscription:${userId}`;
-    const existing = await redis.get(key);
+    const existing = redis ? await redis.get(key) : null;
     const subscriptions = existing ? JSON.parse(existing) : [];
 
     subscriptions.push({
@@ -121,7 +121,7 @@ export async function createSubscription(req: Request, res: Response, next: Next
       createdAt: new Date().toISOString(),
     });
 
-    await redis.set(key, JSON.stringify(subscriptions));
+    if (redis) await redis.set(key, JSON.stringify(subscriptions));
 
     res.status(201).json({ success: true, data: subscriptions });
   } catch (error) {
@@ -133,7 +133,7 @@ export async function getMySubscriptions(req: Request, res: Response, next: Next
   try {
     const userId = req.user!.userId;
     const redis = getRedisClient();
-    const data = await redis.get(`subscription:${userId}`);
+    const data = redis ? await redis.get(`subscription:${userId}`) : null;
     const subscriptions = data ? JSON.parse(data) : [];
 
     res.json({ success: true, data: subscriptions });
@@ -161,7 +161,7 @@ export async function getMyNotifications(req: Request, res: Response, next: Next
     const userId = req.user!.userId;
     const redis = getRedisClient();
     const key = `notifications:${userId}`;
-    const data = await redis.lrange(key, 0, 50);
+    const data = redis ? await redis.lrange(key, 0, 50) : [];
     const notifications = data.map((d) => JSON.parse(d));
 
     res.json({ success: true, data: notifications });

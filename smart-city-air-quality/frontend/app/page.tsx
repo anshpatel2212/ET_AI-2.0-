@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { AQIHeroCard } from '@/components/aqicards/AQIHeroCard'
 import { AQILineChart } from '@/components/charts/AQILineChart'
@@ -8,9 +8,9 @@ import { FadeIn } from '@/components/motion/FadeIn'
 import { StaggerContainer } from '@/components/motion/StaggerContainer'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { getCurrentAQI, getStations, getActiveAlerts, getStationHistory } from '@/lib/api'
-import type { AqiCurrentResponse, StationInfo, Alert } from '@/lib/api'
-import { Activity, Map, BarChart3, AlertTriangle, ArrowRight, Loader2 } from 'lucide-react'
+import { useCurrentAQI, useStations, useActiveAlerts, useStationHistory } from '@/hooks/useAQI'
+import { useStore } from '@/stores/useStore'
+import { Activity, Map, BarChart3, AlertTriangle, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import * as THREE from 'three'
 
@@ -20,61 +20,26 @@ export default function HomePage() {
   const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95])
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
 
-  const [aqiData, setAqiData] = useState<AqiCurrentResponse | null>(null)
-  const [stations, setStations] = useState<StationInfo[]>([])
-  const [alerts, setAlerts] = useState<Alert[]>([])
-  const [chartData, setChartData] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const selectedCity = useStore((s) => s.selectedCity)
+  const { data: aqiResult, isLoading: aqiLoading } = useCurrentAQI(selectedCity)
+  const { data: stationsResult } = useStations()
+  const { data: alertsResult } = useActiveAlerts(selectedCity)
+  const stations = stationsResult?.data ?? []
+  const firstStationId = stations.length > 0 ? stations[0].stationId : ''
+  const from = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { data: historyResult } = useStationHistory(firstStationId, { from })
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      setLoading(true)
-      setError(null)
-
-      const [aqiResult, stationsResult, alertsResult] = await Promise.all([
-        getCurrentAQI(),
-        getStations(),
-        getActiveAlerts(),
-      ])
-
-      if (aqiResult.error && stationsResult.error) {
-        setError(aqiResult.error)
-        setLoading(false)
-        return
-      }
-
-      const aqi = aqiResult.data
-      const stationList = stationsResult.data || []
-      const alertList = alertsResult.data || []
-
-      setAqiData(aqi)
-      setStations(stationList)
-      setAlerts(alertList)
-
-      if (stationList.length > 0) {
-        const from = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        const historyResult = await getStationHistory(stationList[0].stationId, from)
-        if (historyResult.data) {
-          setChartData(
-            historyResult.data.map((h) => ({
-              hour: h.timestamp,
-              aqi: h.aqi,
-              pm25: h.pm25,
-              pm10: h.pm10,
-              co: h.co,
-              no2: h.no2,
-              o3: h.o3,
-            }))
-          )
-        }
-      }
-
-      setLoading(false)
-    }
-
-    fetchAll()
-  }, [])
+  const aqiData = aqiResult?.data ?? null
+  const alerts = alertsResult?.data ?? []
+  const chartData = (historyResult?.data ?? []).map((h: any) => ({
+    hour: h.timestamp,
+    aqi: h.aqi,
+    pm25: h.pm25,
+    pm10: h.pm10,
+    co: h.co,
+    no2: h.no2,
+    o3: h.o3,
+  }))
 
   useEffect(() => {
     if (!canvasRef.current || typeof window === 'undefined') return
@@ -186,7 +151,7 @@ export default function HomePage() {
     <div className="relative">
       <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />
 
-      {loading ? (
+      {aqiLoading ? (
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
@@ -199,12 +164,12 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      ) : error && !aqiData ? (
+      ) : aqiResult?.error && stationsResult?.error ? (
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <div className="glass rounded-2xl p-8 max-w-md text-center">
             <AlertTriangle className="h-12 w-12 text-neon-danger mx-auto mb-4" />
             <h2 className="text-xl font-display font-bold text-text-primary mb-2">Unable to Load Data</h2>
-            <p className="text-text-secondary text-sm mb-4">{error}</p>
+            <p className="text-text-secondary text-sm mb-4">{aqiResult.error}</p>
             <Button onClick={() => window.location.reload()}>Retry</Button>
           </div>
         </div>

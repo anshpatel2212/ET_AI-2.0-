@@ -56,13 +56,24 @@ app.use(errorHandler);
 async function start(): Promise<void> {
   try {
     await connectDatabase();
-    getRedisClient();
+
+    // Redis is optional — don't crash if unavailable
+    try {
+      getRedisClient();
+    } catch (err) {
+      logger.warn('Redis not available — running without caching/queues');
+    }
 
     const io = setupSocketIO(server);
     logger.info('Socket.IO attached to HTTP server');
 
-    await setupWorkers();
-    await scheduleRecurringJobs();
+    // Workers depend on Redis — skip if unavailable
+    try {
+      await setupWorkers();
+      await scheduleRecurringJobs();
+    } catch (err) {
+      logger.warn('Job workers not started — Redis may be unavailable');
+    }
 
     server.listen(config.port, () => {
       logger.info({ port: config.port, env: config.nodeEnv }, 'Server started');
@@ -95,8 +106,13 @@ process.on('unhandledRejection', (reason) => {
   logger.error({ err: reason }, 'Unhandled Promise Rejection');
 });
 
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: NodeJS.ErrnoException) => {
   logger.error({ err: error }, 'Uncaught Exception');
+  // Don't crash on Redis connection errors or EADDRINUSE
+  if (error.code === 'ECONNREFUSED' || error.code === 'EADDRINUSE') {
+    logger.warn('Non-fatal uncaught exception — continuing');
+    return;
+  }
   process.exit(1);
 });
 

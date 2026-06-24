@@ -141,7 +141,9 @@ export async function forgotPassword(req: Request, res: Response, next: NextFunc
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const redis = getRedisClient();
-    await redis.set(`otp:${email}`, otp, 'EX', 600);
+    if (redis) {
+      await redis.set(`otp:${email}`, otp, 'EX', 600);
+    }
 
     logger.info({ email, otp }, 'Password reset OTP generated');
 
@@ -155,6 +157,9 @@ export async function verifyOtp(req: Request, res: Response, next: NextFunction)
   try {
     const { email, otp } = req.body;
     const redis = getRedisClient();
+    if (!redis) {
+      throw new AppError('This feature requires Redis. Please try again later.', 503);
+    }
     const storedOtp = await redis.get(`otp:${email}`);
 
     if (!storedOtp || storedOtp !== otp) {
@@ -179,7 +184,7 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
       const token = authHeader.split(' ')[1];
       const redis = getRedisClient();
       const decoded = jwt.decode(token) as any;
-      if (decoded?.exp) {
+      if (decoded?.exp && redis) {
         const ttl = decoded.exp - Math.floor(Date.now() / 1000);
         if (ttl > 0) {
           await redis.set(`blacklist:${token}`, 'true', 'EX', ttl);
@@ -210,7 +215,7 @@ export async function adminCreateUser(req: Request, res: Response, next: NextFun
     });
 
     await AuditLog.create({
-      userId: req.user!.userId,
+      userId: (req as any).user?.userId,
       action: 'ADMIN_CREATE_USER',
       resource: 'User',
       resourceId: user._id.toString(),

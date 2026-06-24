@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useStore } from '@/stores/useStore'
 import { Menu, X, Bell, User, ChevronDown, Activity, Map, LineChart, AlertTriangle, Users, Heart, Command, Camera, Globe, BarChart3, Factory } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -27,6 +28,8 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const selectedCity = useStore((s) => s.selectedCity)
+  const setCity = useStore((s) => s.setCity)
 
   const cities = ['Ahmedabad', 'Gandhinagar', 'Vadodara', 'Surat', 'Rajkot']
 
@@ -73,7 +76,7 @@ export function Header() {
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-neon-primary/20 text-sm text-text-secondary hover:border-neon-primary/40 transition-colors"
               >
                 <Map className="h-3.5 w-3.5 text-neon-primary" />
-                <span>Ahmedabad</span>
+                  <span>{selectedCity}</span>
                 <ChevronDown className="h-3 w-3" />
               </button>
               <AnimatePresence>
@@ -88,7 +91,7 @@ export function Header() {
                       <button
                         key={city}
                         className="w-full px-4 py-2.5 text-sm text-text-secondary hover:text-neon-primary hover:bg-neon-primary/5 text-left transition-colors"
-                        onClick={() => setCityDropdownOpen(false)}
+                        onClick={() => { setCity(city); setCityDropdownOpen(false) }}
                       >
                         {city}
                       </button>
