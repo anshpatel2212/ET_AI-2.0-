@@ -581,6 +581,23 @@ Main MongoDB collections:
 
 ---
 
+## Alignment with Hackathon Evaluation Criteria
+
+Source Attribution: Clear visual contribution analysis
+Forecasting: Foundation laid for trained ML models
+Enforcement: Framework for prioritized recommendations
+Citizen Advisory: Base for multi-language personalized alerts
+UI/UX: Clean, modern, professional interface
+
+## Future Enhancements (Roadmap)
+
+Integration with real CPCB API and satellite data (Sentinel/MODIS)
+Full ML model (RandomForest / XGBoost) for accurate forecasting
+Interactive Folium/Leaflet map with India-wide hotspots
+Multi-city selector (Delhi, Mumbai, Bengaluru, etc.)
+React full-stack version
+PDF report generation and export
+
 # 🧪 Project Architecture
 
 ```text
